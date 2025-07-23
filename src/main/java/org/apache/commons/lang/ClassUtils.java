@@ -741,37 +741,35 @@ public class ClassUtils {
      * "<code>[Ljava.util.Map.Entry;</code>", and "<code>[Ljava.util.Map$Entry;</code>".
      *
      * @param classLoader  the class loader to use to load the class
-     * @param className  the class name
+     * @param next  the class name
      * @param initialize  whether the class must be initialized
      * @return the class represented by <code>className</code> using the <code>classLoader</code>
      * @throws ClassNotFoundException if the class is not found
      */
     public static Class getClass(
             ClassLoader classLoader, String className, boolean initialize) throws ClassNotFoundException {
-        try {
-            Class clazz;
-            if (abbreviationMap.containsKey(className)) {
-                String clsName = "[" + abbreviationMap.get(className);
-                clazz = Class.forName(clsName, initialize, classLoader).getComponentType();
-            } else {
-                clazz = Class.forName(toCanonicalName(className), initialize, classLoader);
-            }
-            return clazz;
-        } catch (ClassNotFoundException ex) {
-            // allow path separators (.) as inner class name separators
-            int lastDotIndex = className.lastIndexOf(PACKAGE_SEPARATOR_CHAR);
-
-            if (lastDotIndex != -1) {
-                try {
-                    return getClass(classLoader, className.substring(0, lastDotIndex) +
-                            INNER_CLASS_SEPARATOR_CHAR + className.substring(lastDotIndex + 1),
-                            initialize);
-                } catch (ClassNotFoundException ex2) {
-                }
-            }
-
-            throw ex;
-        }
+    	String next = className;
+    	int lastDotIndex = -1;
+        do {
+	    	try {
+	            Class clazz;
+	            if (abbreviationMap.containsKey(next)) {
+	                String clsName = "[" + abbreviationMap.get(next);
+	                clazz = Class.forName(clsName, initialize, classLoader).getComponentType();
+	            } else {
+	                clazz = Class.forName(toCanonicalName(next), initialize, classLoader);
+	            }
+	            return clazz;
+	        } catch (ClassNotFoundException ex) {
+	            // allow path separators (.) as inner class name separators
+	        	lastDotIndex = next.lastIndexOf(PACKAGE_SEPARATOR_CHAR);
+	
+	            if (lastDotIndex != -1) {
+	            	next = next.substring(0, lastDotIndex) + INNER_CLASS_SEPARATOR_CHAR + next.substring(lastDotIndex + 1);
+	            }
+	        }
+    	}while(lastDotIndex != -1);
+        throw new ClassNotFoundException(next);
     }
 
     /**
